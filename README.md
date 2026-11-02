@@ -9,11 +9,32 @@ login in the browser, and calls the same APIs as the web UI, so it can do what y
 | `vew provisioning` | Provisioning: product catalogue and your provisioned products | `/provisioning` |
 | `vew projects` | Projects: projects, your role assignments and enrolments | `/projects` |
 
+## Requirements
+
+On your machine:
+
+- Python 3.11 or newer (the CLI uses the standard library's `tomllib`)
+- [uv](https://docs.astral.sh/uv/) to install dependencies and run the CLI
+- Git, and read access to the private [`elva-labs/vew-cli`](https://github.com/elva-labs/vew-cli) repository
+- A web browser on the same machine, for `vew login`
+- Port `8765` free on `localhost`, where `vew login` receives the sign-in callback
+- Network access to VEW's API domain and its Cognito user pool domain
+
+From the VEW deployment you want to use:
+
+- The API URL, the Cognito user pool domain, and the client id of VEW's `cli` app client (see
+  [Configure](#configure) for how to set that client up)
+- The CA certificate in PEM format, if the API uses a private or self-signed certificate
+
+For your account:
+
+- A VEW user who can sign in through the web UI
+- A role in at least one project. What the CLI can do depends on that role (see [Permissions](#permissions)).
+
 ## Install
 
-Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
-
 ```bash
+git clone https://github.com/elva-labs/vew-cli.git
 cd vew-cli
 uv sync
 uv run vew --help
