@@ -12,6 +12,7 @@ from vew_cli.auth import AuthError, loopback_receiver
 from vew_cli.commands.packaging import packaging
 from vew_cli.commands.projects import projects
 from vew_cli.commands.provisioning import provisioning
+from vew_cli.commands.publishing import publishing
 from vew_cli.config import ConfigError, config_path
 from vew_cli.context import State, pass_state
 from vew_cli.http import ApiError
@@ -141,6 +142,7 @@ def show_config(state: State):
 
 cli.add_command(packaging)
 cli.add_command(provisioning)
+cli.add_command(publishing)
 cli.add_command(projects)
 
 

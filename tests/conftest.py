@@ -52,6 +52,7 @@ def isolated_env(monkeypatch, tmp_path):
         "VEW_PACKAGING_URL",
         "VEW_PROVISIONING_URL",
         "VEW_PROJECTS_URL",
+        "VEW_PUBLISHING_URL",
     ]:
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("VEW_CONFIG", str(tmp_path / "config.toml"))
@@ -91,3 +92,7 @@ def packaging_path(*parts: str) -> str:
 
 def provisioning_path(*parts: str) -> str:
     return "/".join(["/provisioning/projects", PROJECT_ID, "products", *parts])
+
+
+def publishing_path(*parts: str) -> str:
+    return "/".join(["/publishing/projects", PROJECT_ID, *parts])

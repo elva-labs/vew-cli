@@ -82,10 +82,22 @@ def _await_status(state: State, provisioned_product_id: str, wait_opts: dict, sp
     state.emit(response)
 
 
+def _api_product_type(product_type: str | None) -> str | None:
+    """Spells a product type the way the API parses it: camelCase, so VIRTUAL_TARGET becomes virtualTarget.
+
+    The API turns camelCase into SNAKE_CASE by adding an underscore before every capital, so it rejects the
+    SNAKE_CASE values it returns.
+    """
+    if not product_type:
+        return None
+    first, *rest = product_type.lower().split("_")
+    return first + "".join(word.capitalize() for word in rest)
+
+
 def _own_provisioned(state: State, product_types: list[str]) -> list[dict]:
     items = []
     for product_type in product_types:
-        response = _request(state, "GET", "provisioned", params={"productType": product_type})
+        response = _request(state, "GET", "provisioned", params={"productType": _api_product_type(product_type)})
         items += response.get("provisionedProducts", [])
     return items
 
@@ -104,7 +116,7 @@ def products():
 @pass_state
 def list_products(state: State, product_type, product_ids):
     """List products available to the project."""
-    params = {"productType": product_type.upper(), "filter": list(product_ids)}
+    params = {"productType": _api_product_type(product_type), "filter": list(product_ids)}
     state.emit(_request(state, "GET", "available", params=params), "availableProducts", PRODUCT_COLUMNS)
 
 
@@ -200,6 +212,7 @@ def _field(item: dict, key: str):
 def _list_project_wide(state: State, filters, owner, experimental, page_size, paging_key, all_pages) -> dict:
     params = {
         **filters,
+        "productType": _api_product_type(filters["productType"]),
         "owner": owner,
         "experimental": None if experimental is None else str(experimental).lower(),
         "pageSize": page_size,

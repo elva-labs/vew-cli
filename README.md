@@ -6,6 +6,7 @@ login in the browser, and calls the same APIs as the web UI, so it can do what y
 | Command group | API | Base path |
 | --- | --- | --- |
 | `vew packaging` | Packaging: components, recipes, pipelines, image builds | `/packaging` |
+| `vew publishing` | Publishing: products and product versions built from your AMIs | `/publishing` |
 | `vew provisioning` | Provisioning: product catalogue and your provisioned products | `/provisioning` |
 | `vew projects` | Projects: projects, your role assignments and enrolments | `/projects` |
 
@@ -118,6 +119,13 @@ vew packaging pipelines create -f pipeline.json --wait
 vew packaging images build --pipeline-id pipe-123 --wait
 vew packaging images get imag-123 -o table      # imageUpstreamId is the AMI ID
 
+# A product publishes into its technology's DEV portfolio, so the technology needs an onboarded DEV account
+vew publishing products create --name FreeRTOS --type VIRTUAL_TARGET --technology-id tech-123
+vew -o table publishing amis list
+vew publishing versions validate prod-123 --template product.yaml
+vew publishing versions create prod-123 --release-type MAJOR --description "First version" \
+  --ami-id ami-0123456789abcdef0 --template product.yaml --wait
+
 vew -o table provisioning products list --type WORKBENCH
 vew provisioning products versions prod-123 --stage PROD --region eu-west-1
 vew provisioning provisioned launch --product-id prod-123 --version-id vers-456 \
@@ -136,17 +144,17 @@ Run `vew <group> <command> --help` for every option.
 
 ### Permissions
 
-The CLI can do what your role in the project allows in the web UI. Packaging needs at least PRODUCT_CONTRIBUTOR,
-and retiring a released component or recipe version needs ADMIN, PROGRAM_OWNER, or POWER_USER. Launch, start,
-stop, and remove act on your own provisioned products; `provisioned list --project-wide` needs PROGRAM_OWNER or
-ADMIN.
+The CLI can do what your role in the project allows in the web UI. Packaging and publishing need at least
+PRODUCT_CONTRIBUTOR, and retiring a released component or recipe version needs ADMIN, PROGRAM_OWNER, or POWER_USER.
+Launch, start, stop, and remove act on your own provisioned products; `provisioned list --project-wide` needs
+PROGRAM_OWNER or ADMIN.
 
 ### Creates
 
-VEW's APIs accept creates (component versions, recipes, recipe versions, pipelines, image builds, launches) without
-returning the new resource's ID. The CLI lists the resources just before the create and finds the one that appeared
-afterwards with the fields you sent, such as the pipeline name, then prints its ID. If two identical creates run at
-the same time, it cannot tell them apart and exits with code 5 rather than guessing.
+VEW's APIs accept creates (component versions, recipes, recipe versions, pipelines, image builds, product versions,
+launches) without returning the new resource's ID. The CLI lists the resources just before the create and finds the
+one that appeared afterwards with the fields you sent, such as the pipeline name, then prints its ID. If two
+identical creates run at the same time, it cannot tell them apart and exits with code 5 rather than guessing.
 
 Creates are not idempotent: if a create fails or exits with 5, check the list before running it again. Only GET
 requests are retried automatically, after network errors and `429`/`5xx` responses, honouring `Retry-After`.

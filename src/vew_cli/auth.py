@@ -36,12 +36,15 @@ class TokenProvider:
         self._profile = profile
         self._transport = transport
         self._cache_file = (cache or cache_dir()) / "tokens.json"
+        # The session's access token, kept with its expiry so a long --wait refreshes it rather than reusing it.
         self._token: str | None = None
+        self._expires_at = 0.0
 
     def token(self) -> str:
         if self._profile.access_token:
             return self._profile.access_token
-        if self._token:
+        # VEW's authorizer answers an expired token with 403 rather than 401, so it must not be sent at all.
+        if self._token and self._expires_at - EXPIRY_MARGIN_SECONDS > time.time():
             return self._token
 
         key = self._cache_key()
@@ -50,7 +53,7 @@ class TokenProvider:
             raise AuthError("Not logged in. Run `vew login`.")
         if entry["expires_at"] - EXPIRY_MARGIN_SECONDS <= time.time():
             entry = self._refresh(key, entry)
-        self._token = entry["access_token"]
+        self._token, self._expires_at = entry["access_token"], entry["expires_at"]
         return self._token
 
     def invalidate(self) -> bool:
@@ -105,7 +108,7 @@ class TokenProvider:
         cached = self._read_cache()
         cached[self._cache_key()] = entry
         self._save(cached)
-        self._token = entry["access_token"]
+        self._token, self._expires_at = entry["access_token"], entry["expires_at"]
         return entry["username"]
 
     def logout(self) -> bool:

@@ -12,6 +12,7 @@ from pathlib import Path
 DEFAULT_API_PATHS = {
     "packaging": "packaging",
     "provisioning": "provisioning",
+    "publishing": "publishing",
     "projects": "projects",
 }
 

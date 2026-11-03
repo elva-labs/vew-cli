@@ -416,3 +416,25 @@ def test_projects_use_warns_when_the_environment_overrides_it(api, run, monkeypa
 
     assert result.exit_code == 0, result.output
     assert "VEW_PROJECT_ID is set and overrides" in result.stderr
+
+
+def test_long_wait_refreshes_the_token_before_it_expires(api, run, monkeypatch, isolated_env):
+    configure_login(monkeypatch)
+    seed_session(isolated_env, access_token="first", expires_in=3600)
+    api.add("POST", "/oauth2/token", (200, {"access_token": "second", "expires_in": 3600}))
+    api.add("PATCH", "/provisioning/projects/proj-1/products/provisioned/pp-1/stop", (200, {}))
+    clock = {"now": time.time()}
+    monkeypatch.setattr("vew_cli.auth.time.time", lambda: clock["now"])
+
+    def poll(request):
+        clock["now"] += 3550  # past the first token's expiry, less the refresh margin
+        status = "STOPPED" if request.headers["Authorization"] == "Bearer second" else "STOPPING"
+        return 200, {"provisionedProduct": {"status": status}}
+
+    api.add("GET", "/provisioning/projects/proj-1/products/provisioned/pp-1", poll)
+
+    result = run("provisioning", "provisioned", "stop", "pp-1", "--wait")
+
+    assert result.exit_code == 0, result.output
+    gets = [r.headers["Authorization"] for r in api.requests if r.method == "GET"]
+    assert gets == ["Bearer first", "Bearer second"]
